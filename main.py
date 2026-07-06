@@ -164,6 +164,19 @@ def search_businesses(key: str, val: str, lat: float, lng: float, limit: int) ->
     return results
 
 
+@app.get("/")
+async def root():
+    return {
+        "name": "Places Search API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "endpoints": {
+            "/search": "GET ?query=cafe&location=New+York&limit=10",
+            "/search-nearby": "GET ?query=restaurant&lat=40.7128&lng=-74.006&limit=10",
+            "/health": "GET health check",
+        }
+    }
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "source": "OpenStreetMap Overpass API", "free": True}
