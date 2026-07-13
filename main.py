@@ -10,26 +10,9 @@ import subprocess
 import time
 from typing import Optional
 
-from fastapi import FastAPI, Depends, Query, HTTPException
+from fastapi import Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
-import time as _t, threading as _th
-_rl_win, _rl_max, _rl_hits, _rl_lk = 60, 60, {}, _th.Lock()
-
-async def _rate_limit(request):
-    from fastapi import Request, HTTPException
-    ip = (request.headers.get('X-Forwarded-For','') or request.headers.get('X-Real-IP','') or (request.client.host if request.client else '127.0.0.1')).split(',')[0].strip()
-    now = _t.time()
-    with _rl_lk:
-        e = _rl_hits.get(ip)
-        if e:
-            if now - e['s'] > _rl_win: e['s'], e['c'] = now, 1
-            else:
-                e['c'] += 1
-                if e['c'] > _rl_max: raise HTTPException(429, 'Too many requests')
-        else: _rl_hits[ip] = {'s': now, 'c': 1}
-    return True
 
 app = FastAPI(
     title="Places Search API",
@@ -41,7 +24,6 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 @app.api_route("/health", methods=["GET", "HEAD"])
 async def health():
     return {"status": "ok"}
-
 
 OVERPASS = "https://overpass-api.de/api/interpreter"
 _cache: dict = {}
@@ -72,7 +54,6 @@ TAG_MAP = {
     "car repair": ("shop", "car_repair"),
 }
 
-
 def resolve_tag(query: str) -> tuple[str, str]:
     q = query.lower().strip()
     if q in TAG_MAP:
@@ -81,7 +62,6 @@ def resolve_tag(query: str) -> tuple[str, str]:
         if key in q or q in key:
             return tag
     return ("amenity", q.replace(" ", "_"))
-
 
 def overpass_query(overpass_ql: str) -> dict:
     """Run an Overpass QL query via curl. Returns parsed JSON."""
@@ -99,7 +79,6 @@ def overpass_query(overpass_ql: str) -> dict:
         raise RuntimeError("empty response")
     return json.loads(proc.stdout)
 
-
 class Business(BaseModel):
     name: str
     phone: Optional[str] = None
@@ -111,13 +90,11 @@ class Business(BaseModel):
     lat: Optional[float] = None
     lng: Optional[float] = None
 
-
 class SearchResponse(BaseModel):
     query: str
     location: str
     total_results: int
     results: list[Business]
-
 
 def geocode(name: str) -> tuple[float, float, str]:
     """Geocode a place name via Overpass. Prefers more populous places."""
@@ -152,7 +129,6 @@ def geocode(name: str) -> tuple[float, float, str]:
     display = best.get("tags", {}).get("name", name)
     return lat, lng, display
 
-
 def search_businesses(key: str, val: str, lat: float, lng: float, limit: int) -> list[dict]:
     """Search businesses near coordinates."""
     ql = (
@@ -185,11 +161,10 @@ def search_businesses(key: str, val: str, lat: float, lng: float, limit: int) ->
             break
     return results
 
-
 @app.get("/")
 async def root():
     return {
-        "name": "Places Search API",
+        "name": "Places Search API", "related": ["Company Info API", "IP Geolocation API", "Phone Number Lookup API"],
         "version": "1.0.0",
         "docs": "/docs",
         "endpoints": {
@@ -198,8 +173,6 @@ async def root():
             "/health": "GET health check",
         }
     }
-
-
 
 @app.get("/search", response_model=SearchResponse)
 async def search(
@@ -223,7 +196,6 @@ async def search(
         raise HTTPException(400, str(e))
     except Exception as e:
         raise HTTPException(500, str(e))
-
 
 @app.get("/search-nearby", response_model=SearchResponse)
 async def search_nearby(
