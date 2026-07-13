@@ -10,7 +10,7 @@ import subprocess
 import time
 from typing import Optional
 
-from fastapi import Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
