@@ -20,7 +20,7 @@ app = FastAPI(
     version="1.0.0",
 )
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health():
     return {"status": "ok"}
 
@@ -181,7 +181,7 @@ async def root():
         }
     }
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health():
     return {"status": "ok", "source": "OpenStreetMap Overpass API", "free": True}
 
